@@ -265,10 +265,10 @@ if __name__=='__main__':
             log_dict = pickle.load(f)
 
         # Downsampling the frames
-        interval = 15
+        interval = 1
         cat_states_list = log_dict['cat_states_list']
         for j in range(len(cat_states_list)):
-            cat_states_list[j] = cat_states_list[j][:, :, ::interval]
+            cat_states_list[j] = cat_states_list[j][:, ::interval] # 10*[3,21]
         heatmaps = log_dict['heatmaps'][::interval]
         cov_lvls =  log_dict['cov_lvls'][::interval]
         obstacles = log_dict['obstacles']
