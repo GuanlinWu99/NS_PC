@@ -130,7 +130,7 @@ if __name__=='__main__':
     # TODO Move the definition of obstacles to env, not in agents. Agents must be able to detect obstacles on the run.
     xy_init = np.random.uniform(0., 50, (n_agents, 2))
     theta_init= np.random.rand(n_agents, 1)
-    state_init = np.concat((xy_init, theta_init), axis=-1)
+    state_init = np.concatenate((xy_init, theta_init), axis=-1)
     # t0_list = [0 for i in range(n_agents)]
     agents = [MPC_CBF_Unicycle(i, dt, N, v_lim, omega_lim, Q, R, init_state=state_init[i], obstacles = obstacles, flag_cbf=True, r_s=r_s) for i in range(n_agents)]
     decisionNN = GraphConvNet(hypers.n_embed_channel, size_kernal=3, dim_observe=2*r_s, size_world=size_world, n_rel=hypers.n_rel, n_head=4).to(dev)

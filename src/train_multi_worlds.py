@@ -47,7 +47,7 @@ def train(world, optim):
         # probs.append(log_prob)
         xy_goals = action2waypoints(actions, size_world, len_grid)
         theta_goals = np.random.rand(1) * np.pi - np.pi # Randomly generating theta goal for now.
-        state_goal = np.concat((xy_goals, theta_goals), axis=-1)
+        state_goal = np.concatenate((xy_goals, theta_goals), axis=-1)
 
         # Generating ref trajectory
         path_x, path_y, path_yaw, _, _ = plan_dubins_path(agents[i].states[0], agents[i].states[1], agents[i].states[2],
@@ -133,7 +133,7 @@ if __name__=='__main__':
     xy_init = np.random.uniform(0., 50, (n_agents, 2))
     # xy_init[0, :] = np.array([25, 25])
     theta_init= np.random.rand(n_agents, 1)
-    state_init = np.concat((xy_init, theta_init), axis=-1)
+    state_init = np.concatenate((xy_init, theta_init), axis=-1)
     # t0_list = [0 for i in range(n_agents)]
     agents = [MPC_CBF_Unicycle(i, dt, N, v_lim, omega_lim, Q, R, init_state=state_init[i], obstacles = obstacles, flag_cbf=True, r_s=r_s) for i in range(n_agents)]
     decisionNN = GraphConvNet(hypers.n_embed_channel, size_kernal=3, dim_observe=2*r_s, size_world=size_world, n_rel=hypers.n_rel, n_head=4).to(dev)

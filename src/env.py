@@ -48,6 +48,8 @@ class GridWorld(object):
 
     def check(self):
         '''
+        input: agents
+        output:observations(coveragelol)
         Check the surrounding environemtn and return the observations. Now using square shape observing regions.
         '''
         observations = []
@@ -61,16 +63,17 @@ class GridWorld(object):
             # print((left, right, up, down))
             temp = np.copy(self.heatmap_pad)
             mask = grid_agent_dist[i] > self.agent_rs
-            mask = np.pad(mask, np.ceil(self.agents[0].r_s), constant_values=True)
+            mask = np.pad(mask, int(np.ceil(self.agents[0].r_s)), constant_values=True)
             temp[mask] = 0
             observations.append(temp[None, up:down, left:right])
         return observations
 
     def step(self):
+        # 更新coverage level
         grid_agent_dist = self._grid_agents_dist()
         for d in grid_agent_dist:
             self.cov_lvl[d < self.agent_rs] += self.increase
-        self.cov_lvl -= self.decay
+        self.cov_lvl -= self.decay 
         self.cov_lvl[self.cov_lvl < 0] = 0
         self.cov_lvl[self.cov_lvl > self.cov_max] = self.cov_max
         
@@ -78,7 +81,7 @@ class GridWorld(object):
     def add_agents(self, agents):
         self.agents = agents
         self.agent_rs = self.agents[0].r_s
-        self.heatmap_pad = np.pad(self.heatmap, np.ceil(self.agents[0].r_s))
+        self.heatmap_pad = np.pad(self.heatmap, int(np.ceil(self.agents[0].r_s)))
 
     def get_agent_cost(self, id):
         grid_agent_dist = self._grid_agents_dist()
@@ -143,7 +146,7 @@ class GridFireWorld(GridWorld):
 
         self.heatmap -= self.rate # Tempture decreasing in this world
         self.heatmap[self.heatmap < self.cov_max] = self.temp_min
-        self.heatmap_pad = np.pad(self.heatmap, np.ceil(self.agents[0].r_s))
+        self.heatmap_pad = np.pad(self.heatmap, int(np.ceil(self.agents[0].r_s)))
         self.heatmap[left:right, up:down] = self.cov_max
         
     def get_cost_dist2fire(self):
@@ -156,7 +159,7 @@ if __name__=='__main__':
     class Agent(object):
         def __init__(self, init_state) -> None:
             self.state = init_state
-            self.r_s = 2.0
+            self.r_s = 2.0  # 这是啥
     
     agents = [Agent(np.array([0., 0.]))]
 

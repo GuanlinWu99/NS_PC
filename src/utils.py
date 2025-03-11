@@ -9,8 +9,8 @@ def align_length(x: list, length):
     pass
 
 def action2waypoints(actions, world_size, len_grid):
-    n_col = world_size[1]
-    row = actions // n_col
+    n_col = world_size[1]  # 世界的宽
+    row = actions // n_col  # 
     col = actions % n_col
     coord_x = 0.5 * len_grid + col * len_grid
     coord_y = 0.5 * len_grid + row * len_grid

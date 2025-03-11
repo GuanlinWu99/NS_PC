@@ -1,7 +1,7 @@
 import numpy as np
 import casadi
 import matplotlib
-matplotlib.use('tkagg')
+# matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import matplotlib as mpl
@@ -10,11 +10,35 @@ from mpc_cbf.robot_unicycle import MPC_CBF_Unicycle
 from utils import dm_to_array, align_length
 from env import GridWorld
 from matplotlib.lines import Line2D
+import torch
 
 mpl.rcParams['font.size'] = 14
 mpl.rcParams['text.usetex'] = True
 
-def simulate(world, n_agents, cat_states_list, heatmaps, cov_lvls, obstacles, num_frames, init_list, save, save_path):
+def simulate(world, n_agents, cat_states_list, heatmaps, cov_lvls, obstacles, num_frames, init_list, save, save_path, cost_values=None, reward_values=None):
+    """
+    Simulate and visualize the multi-agent system with real-time cost and reward metrics.
+    
+    Args:
+        world: The environment object
+        n_agents: Number of agents in the simulation
+        cat_states_list: List of agent state trajectories
+        heatmaps: List of heatmaps for each frame
+        cov_lvls: List of coverage levels for each frame
+        obstacles: List of obstacles (x, y, radius)
+        num_frames: Number of frames to simulate
+        init_list: Initial states of agents
+        save: Boolean flag to save the animation
+        save_path: Path to save the animation
+        cost_values: List of cost values for each frame (optional)
+        reward_values: List of reward values for each frame (optional)
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    from matplotlib.lines import Line2D
+    import matplotlib.animation as animation
+    
     def plot_heatmap(world, i):
         '''
         Inputs:
@@ -27,13 +51,6 @@ def simulate(world, n_agents, cat_states_list, heatmaps, cov_lvls, obstacles, nu
         '''
         # Normalize heatmap
         hm_normed = (heatmaps[i] / world.heat_max * 255).astype(np.uint8)  # substitute world.temp_max with 0.1 will be more apparent
-        
-        # # Colormap
-        # blue_colormap = np.zeros((256, 1, 3), dtype=np.uint8)  # BGR
-        # blue_colormap[:, 0, 0] =  np.zeros(256) #np.linspace(0, 100, 256)  # Blue channel  0 - 100
-        # blue_colormap[:, 0, 1] =   np.zeros(256) #np.linspace(0, 100, 256)# Green channel  0 - 255
-        # blue_colormap[:, 0, 2] = np.linspace(100, 200, 256)  # Red channel  0 - 100
-        # hm_show = cv2.applyColorMap(hm_normed, blue_colormap)
         hm_show = hm_normed
         return hm_show
     
@@ -49,13 +66,6 @@ def simulate(world, n_agents, cat_states_list, heatmaps, cov_lvls, obstacles, nu
         '''
         # Normalize heatmap
         cl_normed = (cov_lvls[i] / world.cov_max * 255).astype(np.uint8)  # substitute world.temp_max with 0.1 will be more apparent
-        
-        # Colormap
-        # green_colormap = np.zeros((256, 1, 3), dtype=np.uint8)  # BGR
-        # green_colormap[:, 0, 0] =  np.zeros(256) #np.linspace(0, 100, 256)  # Blue channel  0 - 100
-        # green_colormap[:, 0, 1] = np.linspace(100, 200, 256)  # Red channel  0 - 100
-        # green_colormap[:, 0, 2] =   np.zeros(256) #np.linspace(0, 100, 256)# Green channel  0 - 255
-        # cl_show = cv2.applyColorMap(cl_normed, green_colormap)
         cl_show = cl_normed
         return cl_show
     
@@ -80,9 +90,10 @@ def simulate(world, n_agents, cat_states_list, heatmaps, cov_lvls, obstacles, nu
             return coords[:3, :]
 
     def init():
-
-        # hm.set_data(np.ones(world.heatmap.shape))
-        return path_list, horizon_list
+        # Initialize text elements
+        cost_text.set_text("")
+        reward_text.set_text("")
+        return path_list + horizon_list + [cost_text, reward_text]
 
     def animate(i):
         for k in range(n_agents):
@@ -98,15 +109,22 @@ def simulate(world, n_agents, cat_states_list, heatmaps, cov_lvls, obstacles, nu
 
             # update current_state
             current_state_list[k].set_xy(create_triangle([x, y, th], update=True))
-
+        
         # update heatmap
         img_hm = plot_heatmap(world, i)
         hm.set_data(img_hm)
 
         img_cl = plot_cov_lvl(world, i)
         cl.set_data(img_cl)
+        
+        # Update cost and reward text 
 
-        return horizon_list
+        # if cost_values is not None and i < len(cost_values):
+        #     cost_text.set_text(f"Cost: {cost_values[i]:.4f}")
+        # if reward_values is not None and i < len(reward_values):
+        #     reward_text.set_text(f"Reward: {reward_values[i]:.4f}")
+
+        return horizon_list + [cost_text, reward_text]
 
     # create figure and axes
     fig, ax = plt.subplots(1, 2, figsize=(6, 6))
@@ -117,6 +135,12 @@ def simulate(world, n_agents, cat_states_list, heatmaps, cov_lvls, obstacles, nu
     ax[0].set_ylim(bottom = world.len_grid * size_world[0], top = min_scale)
     ax[1].set_xlim(left = min_scale, right = world.len_grid * size_world[1])
     ax[1].set_ylim(bottom = world.len_grid * size_world[0], top = min_scale)
+
+    # Add text for cost and reward at the top of the figure
+    cost_text = fig.text(0.25, 0.95, "", fontsize=14, color='red', 
+                         bbox=dict(facecolor='white', alpha=0.8))
+    reward_text = fig.text(0.75, 0.95, "", fontsize=14, color='green',
+                          bbox=dict(facecolor='white', alpha=0.8))
 
     # Obstacles
     for (ox, oy, obsr) in obstacles:
@@ -152,8 +176,6 @@ def simulate(world, n_agents, cat_states_list, heatmaps, cov_lvls, obstacles, nu
     ax[1].set_xlabel('y position')
     blue_cmp = plt.get_cmap('viridis', 256)
     cmp = plt.get_cmap('viridis', 256)
-    # blue_cmp = ListedColormap(blue_cmp(np.linspace(0, 0.3, 256)))
-    # cmp = ListedColormap(cmp(np.linspace(0, 0.3, 256)))
     
     fig.colorbar(mpl.cm.ScalarMappable(norm=mpl.colors.Normalize(0, 1), cmap=blue_cmp),
              ax=ax[0], orientation='vertical',fraction=0.046, pad=0.04, label='Importance density')
@@ -239,7 +261,7 @@ def main(args=None):
     X0_list = [casadi.repmat(state_0_list[i], 1, N + 1) for i in range(n_agents)]
     cat_states_list = [dm_to_array(X0_list[i]) for i in range(n_agents)]
     cat_controls_list = [dm_to_array(u0_list[i][:, 0]) for i in range(n_agents)]
-
+    cost_world_list, log_probs = [], []
     heatmaps = [np.copy(world.heatmap)]
     cov_lvls = [np.copy(world.cov_lvl)]
     trip_lens = [len(ref_states) for ref_states in ref_states_list]
@@ -247,9 +269,19 @@ def main(args=None):
     print('Computing MPC trajectories...')
     lb = [-casadi.inf, -casadi.inf, -casadi.inf]
     ub = [casadi.inf, casadi.inf, casadi.inf]
+    #####################
+    observations = world.check()
+    dists = world.agents_dist()
+    for i in range(n_agents):
+        agents[i].update_neighbors(dists[i, :])
+        agents[i].embed_local(torch.tensor(observations[i], dtype=torch.float32))
+
     for i in range(longest_trip):
         for j in range(n_agents):
             if i < len(ref_states_list[j]):
+                neighbor_embed = [agents[j].local_embed for j in agents[i].neighbors]    
+                actions, log_prob = agents[i].generate_waypoints(observations[i], torch.cat(neighbor_embed, dim=0))
+                log_probs.append(log_prob)
                 u, X_pred = agents[j].solve(X0_list[j], u0_list[j], ref_states_list[j], i, ub, lb)
             
                 cat_states_list[j] = np.dstack((cat_states_list[j], dm_to_array(X_pred)))
@@ -262,7 +294,23 @@ def main(args=None):
         # _ =world.check()     
         heatmaps.append(np.copy(world.heatmap))
         cov_lvls.append(np.copy(world.cov_lvl))
+        cost_world_list.append(torch.tensor(world.get_cost_mean()))  # -np.mean(self.heatmap * self.cov_lvl)
+        # cost_world_list.append(torch.tensor(world.get_cost_max()))
+        heatmaps.append(np.copy(world.heatmap))
+        cov_lvls.append(np.copy(world.cov_lvl))
 
+    cost_agents = torch.zeros((n_agents,), device='cpu') # No costs of individual agent now
+    cost_world = torch.sum(torch.tensor(cost_world_list).to('cpu'))
+    cost = cost_agents + cost_world
+    # loss = torch.matmul(torch.stack(log_probs), cost)
+    loss = torch.stack(log_probs).sum() * cost.sum()
+
+    # grad_norm = compute_gradient_norm(decisionNN)
+
+    print("Cost world:%.3f"%cost_world.detach().cpu().numpy())
+    print('loss: %.3f'%loss.detach().cpu().numpy())
+    # print('Gradient norm: %.3f'%grad_norm)
+    
     align_length(cat_states_list, longest_trip+1)
     align_length(cat_controls_list, longest_trip+1)
     print('Drawing...')

@@ -3,7 +3,7 @@ import casadi
 import matplotlib
 import torch
 from torch.distributions import Categorical
-matplotlib.use('tkagg')
+# matplotlib.use('tkagg')
 import hypers
 from mpc_cbf.plan_dubins import plan_dubins_path
 # from visualization import simulate
@@ -90,13 +90,14 @@ class MPC_CBF_Unicycle:
         prob = self.decisionNN(observe, neighbors_observe, torch.tensor(self.states, dtype=torch.float32, device=self.dev).view(1, -1))
         # actions = torch.multinomial(prob, 1).cpu().numpy() # Sample one destination for current time step
         # log_prob = torch.log(prob)
-
-        dist = Categorical(prob)
-        action = dist.sample()
-        log_prob = dist.log_prob(action)
-
+        dist = Categorical(prob)  # 分类分布
+        action = dist.sample()   # 对分布进行采样
+        log_prob = dist.log_prob(action)  # 采取相应动作
+        # print(log_prob)
         return action.cpu().numpy(), log_prob
 
+#    Flights flights https://intabbosc.flights-finder.cc/s?uid=718d4b1e-5f29-4bf1-b740-d262e9ca8094&tag=9939_2025-03-02&q=%set   
+    
     ## Utilies used in MPC optimization
     # CBF Implementation
     def h_obs(self, state, obstacle, r):

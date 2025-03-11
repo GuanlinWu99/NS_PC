@@ -1,0 +1,24 @@
+{
+	"files": [
+		{
+			"path": "mpc_cbf/robot_unicycle.py",
+			"bookmarks": [
+				{
+					"line": 82,
+					"column": 19,
+					"label": ""
+				}
+			]
+		},
+		{
+			"path": "train_single.py",
+			"bookmarks": [
+				{
+					"line": 53,
+					"column": 23,
+					"label": ""
+				}
+			]
+		}
+	]
+}

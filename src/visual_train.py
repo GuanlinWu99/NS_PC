@@ -8,10 +8,10 @@ if __name__=='__main__':
     size_world = (50, 50)
     len_grid = 1
     heatmap = np.ones(size_world) * 0.1
-    heatmap[20:40, 25:45] = 0.6
+    # heatmap[20:40, 25:45] = 0.6
     world = GridWorld(size_world, len_grid, heatmap, obstacles=None)
     n_agents = 10
-    epochs = 300
+    epochs = 50
     affix = f'agent{n_agents}_epoch{epochs}_corner'
     
     
